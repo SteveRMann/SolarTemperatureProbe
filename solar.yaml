@@ -1,6 +1,6 @@
 # solar.yaml
 # 2-22-22
-# Detects switch from HA frint-end
+# Detects switch from HA front-end
 
 substitutions:
   device_name: solar
