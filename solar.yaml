@@ -1,0 +1,133 @@
+# solar.yaml
+# 2-22-22
+# Detects switch from HA frint-end
+
+substitutions:
+  device_name: solar
+  
+esphome:
+  name: ${device_name}
+
+  platform: ESP8266
+  board: d1_mini
+  
+  on_boot:
+    priority: -100.0
+    then:
+      - delay: 1s
+      - logger.log: "Hello World"
+      - script.execute: test_ota
+
+
+# Enable logging
+logger:
+  level: DEBUG
+
+
+#Blink the LED_BuiltIn if there's a problem, on otherwise.    
+status_led:
+  pin:
+    number: D4
+    
+wifi:
+  ssid: "Kaywinnet"
+  password: !secret wifi_password
+  fast_connect: true
+  manual_ip:
+    static_ip: 192.168.1.201
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+
+
+
+# Enable Over the Air updates
+ota:
+  safe_mode: True
+
+
+api:
+
+
+
+# This switch is controlled from the front end.
+# It is picked up in the binary_sensor component and
+# tested in the script.
+switch:
+  - platform: gpio
+    name: ${device_name} otamode
+    pin:
+      number: D4
+      mode: output
+    id: ${device_name}_d4
+
+
+binary_sensor:
+  - platform: homeassistant
+    id: ota_mode_test
+    entity_id: switch.solar_otamode
+    
+    
+    
+# Script to test if the otamode switch is on or off
+script:
+  - id: test_ota
+    mode: queued
+    then:
+      - delay: 10s
+      - logger.log: "Checking OTA Mode"
+      - if:
+          condition:
+            binary_sensor.is_on: ota_mode_test
+          then:
+            - logger.log: 'OTA Mode ON'
+            - deep_sleep.prevent: deep_sleep_handler
+          else:
+            - logger.log: 'OTA Mode OFF'
+      - script.execute: test_ota
+
+
+sensor:
+  # WiFi Signal sensor.
+  - platform: wifi_signal
+    name: ${device_name} RSSI
+    update_interval: 60s
+
+  #Dallas DS18B20 Temperature sensor  
+  - platform: dallas
+    address: 0xe60516a1c345ff28
+    name: ${device_name} Temperature
+    unit_of_measurement: '°F'
+    filters:
+    - lambda: return x * (9.0/5.0) + 32.0;   # Fahrenheit
+    - filter_out: nan
+    
+  - platform: adc
+    pin: A0
+    update_interval: 10s
+    name: ${device_name} Battery
+    unit_of_measurement: 'V'
+    filters:
+    - multiply: 10.0
+
+dallas:
+  - pin: D5      
+    update_interval: 5s
+
+
+text_sensor:
+  # Get the WiFi details
+  - platform: wifi_info
+    ip_address:
+      name: ${device_name} IP Address
+    ssid:
+      name: ${device_name} SSID
+    mac_address:
+      name: ${device_name} Mac Address
+  
+
+
+
+deep_sleep:
+  id: deep_sleep_handler
+  run_duration: 20s
+  sleep_duration: 60s 
