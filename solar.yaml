@@ -1,6 +1,6 @@
 # solar.yaml
 # 2-22-22
-# Detects switch from HA front-end
+# Detects switch from HA frint-end
 
 substitutions:
   device_name: solar
@@ -63,8 +63,8 @@ switch:
 
 binary_sensor:
   - platform: homeassistant
-    id: ota_mode_test
-    entity_id: switch.solar_otamode
+    id: otamode_button
+    entity_id: input_boolean.solar_ota_mode
     
     
     
@@ -77,7 +77,7 @@ script:
       - logger.log: "Checking OTA Mode"
       - if:
           condition:
-            binary_sensor.is_on: ota_mode_test
+            binary_sensor.is_on: otamode_button
           then:
             - logger.log: 'OTA Mode ON'
             - deep_sleep.prevent: deep_sleep_handler
